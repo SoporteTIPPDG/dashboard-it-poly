@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SLA — Soporte IT Polyproductos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.37.1/js/msal-browser.min.js"></script>
+<style>
+  /* ── Reset & Base ─────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #f5f6f8;
+    --surface:  #ffffff;
+    --border:   #e2e4e9;
+    --text:     #1a1d23;
+    --muted:    #6b7280;
+    --green:    #1D9E75;
+    --green-bg: #E1F5EE;
+    --amber:    #BA7517;
+    --amber-bg: #FAEEDA;
+    --red:      #A32D2D;
+    --red-bg:   #FCEBEB;
+    --blue:     #185FA5;
+    --blue-bg:  #E6F1FB;
+    --radius:   10px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ───────────────────────────────────── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 36px; height: 36px;
+    background: #0F6E56;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 18px; font-weight: 600;
+  }
+  .header h1 { font-size: 15px; font-weight: 600; }
+  .header p  { font-size: 12px; color: var(--muted); }
+  .badge-live {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--green);
+    background: var(--green-bg);
+    padding: 4px 12px; border-radius: 99px;
+    border: 1px solid #9FE1CB;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%; background: var(--green);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .btn-refresh {
+    padding: 6px 14px; border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer;
+    font-size: 12px; color: var(--muted);
+    transition: all .15s;
+  }
+  .btn-refresh:hover { background: var(--bg); color: var(--text); }
+
+  /* ── Layout ───────────────────────────────────── */
+  .main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── Estado de carga / error ──────────────────── */
+  .state-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 48px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .state-panel .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .state-panel.error { border-color: #F7C1C1; background: var(--red-bg); }
+  .state-panel.error .title { color: var(--red); font-weight: 600; margin-bottom: 8px; }
+  .state-panel.error .hint { font-size: 12px; margin-top: 12px; color: var(--muted); }
+
+  /* ── KPIs ─────────────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .kpi-value.green  { color: var(--green); }
+  .kpi-value.amber  { color: var(--amber); }
+  .kpi-value.red    { color: var(--red); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Filtros ──────────────────────────────────── */
+  .filters {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .filters label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .filters select, .filters input[type="date"] {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+  .filters select:hover, .filters input:hover { border-color: #9ca3af; }
+  .btn-clear {
+    font-size: 12px; padding: 6px 14px;
+    border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer;
+    color: var(--muted); transition: all .15s;
+    margin-left: auto;
+  }
+  .btn-clear:hover { background: var(--bg); color: var(--text); }
+
+  /* ── Gráficas ─────────────────────────────────── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .chart-card h3 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .chart-wrap { position: relative; width: 100%; height: 180px; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-sq { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Tabla ────────────────────────────────────── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .table-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .table-header h2 { font-size: 14px; font-weight: 600; }
+  .table-count { font-size: 12px; color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    background: var(--bg);
+  }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg); }
+
+  /* ── Badges SLA ───────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 99px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge::before { content: '●'; font-size: 9px; }
+  .badge-verde  { background: var(--green-bg); color: var(--green); }
+  .badge-amarillo { background: var(--amber-bg); color: var(--amber); }
+  .badge-rojo   { background: var(--red-bg); color: var(--red); }
+  .badge-estado {
+    display: inline-block;
+    padding: 3px 9px; border-radius: 99px;
+    font-size: 11px; font-weight: 500;
+    background: var(--bg); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Footer ───────────────────────────────────── */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 16px 0 28px;
+  }
+  .empty-row td {
+    text-align: center;
+    padding: 40px !important;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">IT</div>
+    <div>
+      <h1>Dashboard SLA — Soporte IT</h1>
+      <p>Polyproductos · Lista: DB_GESTIONESIT</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="last-update" style="font-size:12px;color:var(--muted)"></span>
+    <div class="badge-live"><div class="dot"></div>Datos en vivo</div>
+    <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div id="state-panel" class="state-panel">
+    <div class="spinner"></div>
+    <p id="state-text">Iniciando conexión segura con Microsoft 365...</p>
+  </div>
+
+  <div id="dashboard-content" style="display:none">
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Total Tickets</div>
+        <div class="kpi-value" id="k-total">—</div>
+        <div class="kpi-sub">en el período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">En Gestión / Proceso</div>
+        <div class="kpi-value amber" id="k-abiertos">—</div>
+        <div class="kpi-sub">tickets activos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Atendidos</div>
+        <div class="kpi-value green" id="k-cerrados">—</div>
+        <div class="kpi-sub">resueltos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">SLA Vencido 🔴</div>
+        <div class="kpi-value red" id="k-vencidos">—</div>
+        <div class="kpi-sub">superaron tiempo est.</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">En Riesgo 🟡</div>
+        <div class="kpi-value amber" id="k-riesgo">—</div>
+        <div class="kpi-sub">entre 80%–100% SLA</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">% SLA Cumplido</div>
+        <div class="kpi-value green" id="k-pct">—</div>
+        <div class="kpi-sub">dentro del tiempo</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <label>Gestionador</label>
+      <select id="f-gestionador" onchange="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option value="Dolly Garcia">Dolly Garcia</option>
+        <option value="Jairo Marin">Jairo Marin</option>
+        <option value="-">-</option>
+      </select>
+
+      <label>Satisfacción</label>
+      <select id="f-satisfaccion" onchange="aplicarFiltros()">
+        <option value="">Todas</option>
+        <option value="Muy Satisfecho">Muy Satisfecho</option>
+        <option value="Satisfecho">Satisfecho</option>
+        <option value="Insatisfecho">Insatisfecho</option>
+      </select>
+
+      <label>Técnico</label>
+      <select id="f-encargado" onchange="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option>Soporte It</option>
+        <option>Desarrollo It</option>
+      </select>
+
+      <label>Estado</label>
+      <select id="f-estado" onchange="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option value="Atendido">Atendido</option>
+        <option value="En Gestion">En Gestión</option>
+        <option value="En Proceso">En Proceso</option>
+        <option value="Cancelado">Cancelado</option>
+        <option value="Cierre Justificado">Cierre Justificado</option>
+      </select>
+
+      <label>Área</label>
+      <select id="f-area" onchange="aplicarFiltros()">
+        <option value="">Todas</option>
+        <option>Bodega</option>
+        <option>Administración</option>
+        <option>Control de Calidad</option>
+        <option>Planta Empaques Industriales</option>
+        <option>Planta Telas Agrotextiles</option>
+        <option>Planta Pita y Lazo</option>
+        <option>Mantenimiento</option>
+        <option>Seguridad</option>
+        <option>Informática</option>
+        <option>Gerencia</option>
+        <option>RRHH</option>
+      </select>
+
+      <label>Tipo</label>
+      <select id="f-tipo" onchange="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option>SGSystem</option><option>SAP</option>
+        <option>Wifi/Red</option><option>Impresoras</option>
+        <option>Office</option><option>Windows</option>
+        <option>Problema de computadora</option>
+        <option>Otros soporte</option><option>Otros Desarrollo</option>
+        <option>ZK</option><option>Biometricos</option>
+      </select>
+
+      <label>SLA</label>
+      <select id="f-sla" onchange="aplicarFiltros()">
+        <option value="">Todo</option>
+        <option value="verde">Verde (OK)</option>
+        <option value="amarillo">Amarillo (Riesgo)</option>
+        <option value="rojo">Rojo (Vencido)</option>
+      </select>
+
+      <label>Desde</label>
+      <input type="date" id="f-desde" onchange="aplicarFiltros()">
+      <label>Hasta</label>
+      <input type="date" id="f-hasta" onchange="aplicarFiltros()">
+
+      <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Estado SLA</h3>
+        <div class="legend" id="leg-sla"></div>
+        <div class="chart-wrap">
+          <canvas id="chart-sla" role="img" aria-label="Distribución SLA"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Tickets por técnico</h3>
+        <div class="legend" id="leg-enc"></div>
+        <div class="chart-wrap">
+          <canvas id="chart-enc" role="img" aria-label="Tickets por técnico"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Tickets por área</h3>
+        <div class="legend" id="leg-area"></div>
+        <div class="chart-wrap">
+          <canvas id="chart-area" role="img" aria-label="Tickets por área"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Tipo de gestión</h3>
+        <div class="legend" id="leg-tipo"></div>
+        <div class="chart-wrap">
+          <canvas id="chart-tipo" role="img" aria-label="Tickets por tipo"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h2>Detalle de tickets</h2>
+        <span class="table-count" id="table-count"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Gestionador</th>
+              <th>Técnico</th>
+              <th>Área</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th>Tiempo / Estimado</th>
+              <th>SLA</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div></main>
+
+<div class="footer">
+  Dashboard SLA · Soporte IT Polyproductos ·
+  <span id="footer-count"></span> tickets cargados desde SharePoint
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIGURACIÓN DE APP REGISTRATION (ENTRA ID)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const msalConfig = {
+    auth: {
+        clientId: '47a58f99-af56-49ef-b3d2-fc5c6fd878c6',
+        authority: 'https://login.microsoftonline.com/8e19be66-0a43-4716-b3d1-164ffad3d86c',
+        // Detecta automáticamente donde esté alojado (GitHub Pages)
+        redirectUri: window.location.href.split('?')[0].split('#')[0] 
+    },
+    cache: {
+        cacheLocation: "sessionStorage", 
+        storeAuthStateInCookie: false, 
+    }
+};
+
+const msalInstance = new window.msal.PublicClientApplication(msalConfig);
+
+const tokenRequest = {
+    scopes: ["https://polyproductos.sharepoint.com/.default"]
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIGURACIÓN DEL DASHBOARD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const CONFIG = {
+  spSiteUrl: 'https://polyproductos.sharepoint.com/sites/GestionesIT',
+  listName: 'DB_GESTIONESIT',
+  topItems: 500,
+  campos: {
+    id:          'ID',
+    gestionador: 'Gestionador',
+    encargado:   'Encargado',
+    area:        'Ingrese_x0020_el_x0020__x00e1_re',
+    tipo:        'Tipo_x0020_de_x0020_gesti_x00f3_',
+    estado:      'Estado',
+    descripcion: 'Descripci_x00f3_n_x0020_de_x0020',
+    tiempoEst:   'TiempoEstimado',
+    created:     'Created',
+    fechaFin:    'FechaFin',
+    causa:       'Causa',
+    satisfaccion:'Satisfaccion',
+  },
+  estadosCerrados: ['Atendido', 'Cancelado', 'Cierre Justificado'],
+};
+
+let todosLosTickets = [];
+let ticketsFiltrados = [];
+let chartInstances = {};
+const COLORES = ['#1D9E75','#378ADD','#BA7517','#D85A30','#7F77DD','#888780','#D4537E','#639922','#E24B4A'];
+
+// Función NORMALIZAR para arreglar textos rebeldes
+const normalizar = (str) => {
+  if (!str) return "";
+  return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LÓGICA DE AUTENTICACIÓN
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function obtenerTokenAcceso() {
+    try {
+        const currentAccounts = msalInstance.getAllAccounts();
+        if (currentAccounts.length === 0) {
+            document.getElementById('state-text').innerText = "Esperando inicio de sesión...";
+            const loginResponse = await msalInstance.loginPopup(tokenRequest);
+            msalInstance.setActiveAccount(loginResponse.account);
+            return loginResponse.accessToken;
+        } else {
+            const account = currentAccounts[0];
+            msalInstance.setActiveAccount(account);
+            const tokenResponse = await msalInstance.acquireTokenSilent({
+                ...tokenRequest,
+                account: account
+            });
+            return tokenResponse.accessToken;
+        }
+    } catch (error) {
+        if (error instanceof window.msal.InteractionRequiredAuthError) {
+            const loginResponse = await msalInstance.loginPopup(tokenRequest);
+            return loginResponse.accessToken;
+        }
+        console.error("Error de autenticación:", error);
+        throw new Error("No se pudo iniciar sesión con Microsoft 365.");
+    }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CARGA DE DATOS DESDE SHAREPOINT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function cargarDatos() {
+  mostrarEstado('cargando', 'Obteniendo token de acceso...');
+
+  try {
+    const accessToken = await obtenerTokenAcceso();
+    document.getElementById('state-text').innerText = "Descargando tickets de SharePoint...";
+
+    const url = `${CONFIG.spSiteUrl}/_api/lists/getbytitle('${CONFIG.listName}')/items`
+      + `?$top=${CONFIG.topItems}`
+      + `&$orderby=ID desc`
+      + `&$select=` + Object.values(CONFIG.campos).join(',');
+
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json;odata=verbose',
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}: ${res.statusText}`);
+
+    const json = await res.json();
+    const items = json.d?.results;
+    if (!items) throw new Error('Formato inesperado de SharePoint.');
+
+    todosLosTickets = items.map(item => ({
+      id:          item[CONFIG.campos.id],
+      gestionador: item[CONFIG.campos.gestionador] || '—',
+      encargado:   item[CONFIG.campos.encargado]   || '—',
+      area:        item[CONFIG.campos.area]         || '—',
+      tipo:        item[CONFIG.campos.tipo]         || '—',
+      estado:      item[CONFIG.campos.estado]       || '—',
+      descripcion: item[CONFIG.campos.descripcion]  || '',
+      tiempoEst:   parseFloat(item[CONFIG.campos.tiempoEst]) || 480,
+      created:     item[CONFIG.campos.created],
+      fechaFin:    item[CONFIG.campos.fechaFin]     || null,
+      satisfaccion: item[CONFIG.campos.satisfaccion] || '—'
+    }));
+
+    if (json.d.__next) {
+        document.getElementById('state-text').innerText = "Cargando tickets antiguos (paginación)...";
+        await cargarPaginas(json.d.__next, accessToken);
+    }
+
+    document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-GT', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('footer-count').textContent = todosLosTickets.length;
+    ticketsFiltrados = [...todosLosTickets];
+    mostrarDashboard();
+
+  } catch (err) {
+    console.error('Error general:', err);
+    mostrarError(err.message);
+  }
+}
+
+async function cargarPaginas(nextUrl, token) {
+  try {
+    const res = await fetch(nextUrl, {
+      headers: { 
+          'Accept': 'application/json;odata=verbose',
+          'Authorization': `Bearer ${token}` 
+      }
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    const items = json.d?.results || [];
+    const masItems = items.map(item => ({
+      id:          item[CONFIG.campos.id],
+      gestionador: item[CONFIG.campos.gestionador] || '—',
+      encargado:   item[CONFIG.campos.encargado]   || '—',
+      area:        item[CONFIG.campos.area]         || '—',
+      tipo:        item[CONFIG.campos.tipo]         || '—',
+      estado:      item[CONFIG.campos.estado]       || '—',
+      tiempoEst:   parseFloat(item[CONFIG.campos.tiempoEst]) || 480,
+      created:     item[CONFIG.campos.created],
+      fechaFin:    item[CONFIG.campos.fechaFin]     || null,
+      satisfaccion: item[CONFIG.campos.satisfaccion] || '—'
+    }));
+    todosLosTickets = todosLosTickets.concat(masItems);
+    if (json.d.__next) await cargarPaginas(json.d.__next, token);
+  } catch(e) {
+    console.warn('Error en paginación:', e);
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CÁLCULO DE SLA, FILTROS Y RENDER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function calcularSLA(ticket) {
+  const ahora   = new Date();
+  const inicio  = new Date(ticket.created);
+  const estMin  = ticket.tiempoEst || 480;
+  const cerrado = CONFIG.estadosCerrados.includes(ticket.estado);
+  let transcMin = cerrado && ticket.fechaFin ? (new Date(ticket.fechaFin) - inicio) / 60000 : (ahora - inicio) / 60000;
+  const pct = transcMin / estMin;
+  let estado;
+  if (cerrado) { estado = pct <= 1 ? 'verde' : 'rojo'; } 
+  else {
+    if (pct < 0.8) estado = 'verde';
+    else if (pct < 1.0) estado = 'amarillo';
+    else estado = 'rojo';
+  }
+  return { transcMin: Math.round(transcMin), estMin, pct, estado, cerrado };
+}
+
+function formatMin(m) {
+  if (m < 0) return '0min';
+  if (m < 60) return m + 'min';
+  return Math.floor(m / 60) + 'h' + (m % 60 > 0 ? ' ' + (m % 60) + 'min' : '');
+}
+
+function formatFecha(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-GT', {day:'2-digit', month:'2-digit', year:'2-digit'});
+}
+
+function aplicarFiltros() {
+  const enc   = document.getElementById('f-encargado').value;
+  const est   = document.getElementById('f-estado').value;
+  const area  = document.getElementById('f-area').value;
+  const tipo  = document.getElementById('f-tipo').value;
+  const sla   = document.getElementById('f-sla').value;
+  const desde = document.getElementById('f-desde').value;
+  const hasta = document.getElementById('f-hasta').value;
+  const gest  = document.getElementById('f-gestionador').value;
+  const sat   = document.getElementById('f-satisfaccion').value;
+
+  ticketsFiltrados = todosLosTickets.filter(t => {
+    if (enc  && normalizar(t.encargado) !== normalizar(enc)) return false;
+    if (est  && normalizar(t.estado) !== normalizar(est)) return false;
+    if (area && normalizar(t.area) !== normalizar(area)) return false;
+    if (tipo && normalizar(t.tipo) !== normalizar(tipo)) return false;
+    if (gest && normalizar(t.gestionador) !== normalizar(gest)) return false;
+    if (sat  && normalizar(t.satisfaccion) !== normalizar(sat)) return false;
+    if (sla  && calcularSLA(t).estado !== sla) return false;
+    if (desde && new Date(t.created) < new Date(desde)) return false;
+    if (hasta && new Date(t.created) > new Date(hasta + 'T23:59:59')) return false;
+    return true;
+  });
+
+  renderKPIs(); 
+  renderTabla(); 
+  renderGraficas();
+}
+
+function limpiarFiltros() {
+  ['f-gestionador','f-satisfaccion','f-encargado','f-estado','f-area','f-tipo','f-sla','f-desde','f-hasta']
+    .forEach(id => document.getElementById(id).value = '');
+  aplicarFiltros();
+}
+
+function renderKPIs() {
+  const total = ticketsFiltrados.length;
+  
+  const abiertos = ticketsFiltrados.filter(t => 
+    ['en gestion', 'en proceso'].includes(normalizar(t.estado))
+  ).length;
+
+  const cerrados = ticketsFiltrados.filter(t => 
+    CONFIG.estadosCerrados.map(normalizar).includes(normalizar(t.estado))
+  ).length;
+
+  let verde = 0, amarillo = 0, rojo = 0;
+  ticketsFiltrados.forEach(t => {
+    const s = calcularSLA(t);
+    if (s.estado === 'verde') verde++;
+    else if (s.estado === 'amarillo') amarillo++;
+    else rojo++;
+  });
+
+  const pct = total > 0 ? Math.round((verde / total) * 100) : 0;
+
+  document.getElementById('k-total').textContent = total;
+  document.getElementById('k-abiertos').textContent = abiertos;
+  document.getElementById('k-cerrados').textContent = cerrados;
+  document.getElementById('k-vencidos').textContent = rojo;
+  document.getElementById('k-riesgo').textContent = amarillo;
+  document.getElementById('k-pct').textContent = pct + '%';
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('tbody');
+  document.getElementById('table-count').textContent = ticketsFiltrados.length + ' tickets';
+  if (!ticketsFiltrados.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">Sin tickets con estos filtros</td></tr>`;
+    return;
+  }
+  const sorted = [...ticketsFiltrados].sort((a,b) => new Date(b.created) - new Date(a.created));
+  tbody.innerHTML = sorted.map(t => {
+    const s = calcularSLA(t);
+    const cls = 'badge-' + s.estado;
+    const label = s.estado === 'verde' ? 'OK' : s.estado === 'amarillo' ? 'Riesgo' : 'Vencido';
+    return `<tr>
+      <td style="font-weight:600;color:var(--muted)">#${t.id}</td>
+      <td title="${t.gestionador}">${t.gestionador}</td>
+      <td>${t.encargado}</td>
+      <td title="${t.area}">${t.area}</td>
+      <td title="${t.tipo}">${t.tipo}</td>
+      <td><span class="badge-estado">${t.estado}</span></td>
+      <td>${formatFecha(t.created)}</td>
+      <td style="color:var(--muted);font-size:12px">${formatMin(s.transcMin)} / ${formatMin(s.estMin)}</td>
+      <td><span class="badge ${cls}">${label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function contarPor(campo) {
+  return ticketsFiltrados.reduce((acc, t) => {
+    const v = t[campo] || 'Sin dato';
+    acc[v] = (acc[v] || 0) + 1; return acc;
+  }, {});
+}
+
+function buildLegend(elId, labels, values, colors) {
+  document.getElementById(elId).innerHTML = labels.map((l, i) =>
+    `<span class="legend-item"><span class="legend-sq" style="background:${colors[i % colors.length]}"></span>${l} (${values[i]})</span>`
+  ).join('');
+}
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function renderGraficas() {
+  let v=0, a=0, r=0;
+  ticketsFiltrados.forEach(t => { const s = calcularSLA(t); if(s.estado==='verde') v++; else if(s.estado==='amarillo') a++; else r++; });
+  const slaLabels = ['Verde (OK)', 'Amarillo (Riesgo)', 'Rojo (Vencido)'], slaVals = [v, a, r], slaCols = ['#1D9E75', '#EF9F27', '#E24B4A'];
+  destroyChart('sla'); buildLegend('leg-sla', slaLabels, slaVals, slaCols);
+  chartInstances['sla'] = new Chart(document.getElementById('chart-sla'), { type: 'doughnut', data: { labels: slaLabels, datasets: [{ data: slaVals, backgroundColor: slaCols, borderWidth: 0 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }});
+
+  const encData = contarPor('encargado'), encL = Object.keys(encData), encV = Object.values(encData);
+  destroyChart('enc'); buildLegend('leg-enc', encL, encV, COLORES);
+  chartInstances['enc'] = new Chart(document.getElementById('chart-enc'), { type: 'doughnut', data: { labels: encL, datasets: [{ data: encV, backgroundColor: encL.map((_,i)=>COLORES[i%COLORES.length]), borderWidth:0 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }});
+
+  const areaData = contarPor('area'), topAreas = Object.entries(areaData).sort((a,b)=>b[1]-a[1]).slice(0,8), areaL = topAreas.map(x=>x[0]), areaV = topAreas.map(x=>x[1]);
+  destroyChart('area'); buildLegend('leg-area', areaL, areaV, COLORES);
+  chartInstances['area'] = new Chart(document.getElementById('chart-area'), { type: 'bar', data: { labels: areaL, datasets: [{ data: areaV, backgroundColor: areaL.map((_,i)=>COLORES[i%COLORES.length]), borderWidth:0, borderRadius:4 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{font:{size:10}, maxRotation:35}, grid:{display:false} }, y:{ ticks:{stepSize:1, font:{size:10}}, grid:{color:'rgba(0,0,0,0.05)'} } } }});
+
+  const tipoData = contarPor('tipo'), topTipos = Object.entries(tipoData).sort((a,b)=>b[1]-a[1]).slice(0,8), tipoL = topTipos.map(x=>x[0]), tipoV = topTipos.map(x=>x[1]);
+  destroyChart('tipo'); buildLegend('leg-tipo', tipoL, tipoV, COLORES);
+  chartInstances['tipo'] = new Chart(document.getElementById('chart-tipo'), { type: 'bar', data: { labels: tipoL, datasets: [{ data: tipoV, backgroundColor: tipoL.map((_,i)=>COLORES[i%COLORES.length]), borderWidth:0, borderRadius:4 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{font:{size:10}, maxRotation:35}, grid:{display:false} }, y:{ ticks:{stepSize:1, font:{size:10}}, grid:{color:'rgba(0,0,0,0.05)'} } } }});
+}
+
+function mostrarEstado(tipo, msg) {
+  document.getElementById('state-panel').style.display = 'block';
+  document.getElementById('dashboard-content').style.display = 'none';
+  if(msg) document.getElementById('state-text').innerText = msg;
+}
+
+function mostrarError(msg) {
+  const panel = document.getElementById('state-panel');
+  panel.className = 'state-panel error';
+  panel.innerHTML = `<div class="title">❌ Error de Autenticación o Conexión</div><p>${msg}</p><div class="hint">Asegúrate de que la App Registration tiene permisos de <strong>AllSites.Read</strong> y que le diste a "Conceder consentimiento de administrador".</div><button class="btn-refresh" onclick="location.reload()" style="margin-top:12px">↻ Recargar página</button>`;
+}
+
+function mostrarDashboard() {
+  document.getElementById('state-panel').style.display = 'none';
+  document.getElementById('dashboard-content').style.display = 'block';
+  renderKPIs(); renderTabla(); renderGraficas();
+}
+
+// INICIAR
+cargarDatos();
+setInterval(cargarDatos, 5 * 60 * 1000);
+</script>
+</body>
+</html>
