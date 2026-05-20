@@ -124,24 +124,24 @@ tbody tr:hover td{background:var(--bg)}
 
   <div id="dashboard-content" style="display:none">
 
-    <!-- KPIs -->
     <div class="kpi-grid">
       <div class="kpi"><div class="kpi-label">Total Tickets</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">en el período</div></div>
       <div class="kpi"><div class="kpi-label">En Gestión / Proceso</div><div class="kpi-value amber" id="k-abiertos">—</div><div class="kpi-sub">tickets activos</div></div>
       <div class="kpi"><div class="kpi-label">Atendidos</div><div class="kpi-value green" id="k-cerrados">—</div><div class="kpi-sub">resueltos</div></div>
       <div class="kpi"><div class="kpi-label">SLA Vencido 🔴</div><div class="kpi-value red" id="k-vencidos">—</div><div class="kpi-sub">superaron tiempo est.</div></div>
-      <div class="kpi"><div class="kpi-label">En Riesgo 🟡</div><div class="kpi-value amber" id="k-riesgo">—</div><div class="kpi-sub">80–100% del tiempo</div></div>
+      <div class="kpi"><div class="kpi-label">En Riesgo / Al límite 🟡</div><div class="kpi-value amber" id="k-riesgo">—</div><div class="kpi-sub">80–100% del tiempo</div></div>
       <div class="kpi"><div class="kpi-label">% SLA Cumplido</div><div class="kpi-value green" id="k-pct">—</div><div class="kpi-sub">dentro del tiempo</div></div>
     </div>
 
-    <!-- Barra de diagnóstico (ayuda a detectar valores reales de estados) -->
     <div class="debug-bar" id="debug-bar">
       <strong>🔍 Diagnóstico estados reales de SharePoint:</strong> <span id="debug-estados"></span>
     </div>
 
-    <!-- Filtros — Fila 1 -->
     <div class="filters">
       <div class="filters-row">
+        <label style="color:#185FA5; font-size:13px;">🗓️ Mes</label>
+        <select id="f-mes" onchange="aplicarFiltros()" style="border: 2px solid #185FA5; font-weight: bold; color: #185FA5;"></select>
+
         <label>Técnico</label>
         <select id="f-encargado" onchange="aplicarFiltros()">
           <option value="">Todos</option>
@@ -210,7 +210,6 @@ tbody tr:hover td{background:var(--bg)}
       </div>
     </div>
 
-    <!-- Gráficas -->
     <div class="charts-grid">
       <div class="chart-card"><h3>Estado SLA</h3><div class="legend" id="leg-sla"></div><div class="chart-wrap"><canvas id="chart-sla"></canvas></div></div>
       <div class="chart-card"><h3>Tickets por técnico</h3><div class="legend" id="leg-enc"></div><div class="chart-wrap"><canvas id="chart-enc"></canvas></div></div>
@@ -218,7 +217,6 @@ tbody tr:hover td{background:var(--bg)}
       <div class="chart-card"><h3>Tipo de gestión</h3><div class="legend" id="leg-tipo"></div><div class="chart-wrap"><canvas id="chart-tipo"></canvas></div></div>
     </div>
 
-    <!-- Tabla -->
     <div class="table-card">
       <div class="table-header">
         <h2>Detalle de tickets</h2>
@@ -280,7 +278,6 @@ const CONFIG = {
     fechaFin:    'FechaFin',
     satisfaccion:'Satisfaccion',
   },
-  // Estados cerrados para SLA — comparación normalizada
   estadosCerradosNorm: ['atendido', 'cancelado', 'cierre justificado'],
 };
 
@@ -290,17 +287,11 @@ let chartInstances   = {};
 const COLORES = ['#1D9E75','#378ADD','#BA7517','#D85A30','#7F77DD','#888780','#D4537E','#639922','#E24B4A'];
 
 // ══════════════════════════════════════════════════
-// NORMALIZACIÓN — elimina espacios invisibles y
-// diferencias de mayúsculas/acentos para comparar
+// NORMALIZACIÓN
 // ══════════════════════════════════════════════════
 function norm(str) {
   if (!str) return '';
-  return String(str)
-    .trim()                        // quita espacios al inicio/fin
-    .replace(/\s+/g, ' ')          // colapsa espacios múltiples
-    .toLowerCase()
-    .normalize('NFD')              // separa letras de acentos
-    .replace(/[\u0300-\u036f]/g, ''); // elimina los acentos
+  return String(str).trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function esCerrado(estado) {
@@ -363,10 +354,7 @@ async function cargarDatos() {
       await cargarPaginas(json.d.__next, token);
     }
 
-    // Poblar filtros dinámicamente con valores REALES de SharePoint
     poblarFiltrosDinamicos();
-
-    // Activar barra de diagnóstico para verificar estados reales
     activarDiagnostico();
 
     setText('last-update', 'Actualizado ' + new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'}));
@@ -393,6 +381,15 @@ async function cargarPaginas(nextUrl, token) {
 }
 
 function normalizar(item) {
+  const created = item[CONFIG.campos.created];
+  
+  // Extraer el mes crudo (Ej: "2026-05") para el filtro
+  let mesRaw = '';
+  if (created) {
+    const d = new Date(created);
+    mesRaw = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+
   return {
     id:          item[CONFIG.campos.id],
     gestionador: (item[CONFIG.campos.gestionador] || '—').trim(),
@@ -402,32 +399,52 @@ function normalizar(item) {
     estado:      (item[CONFIG.campos.estado]       || '—').trim(),
     satisfaccion:(item[CONFIG.campos.satisfaccion] || '—').trim(),
     tiempoEst:   parseFloat(item[CONFIG.campos.tiempoEst]) || 480,
-    created:     item[CONFIG.campos.created],
+    created:     created,
+    mesRaw:      mesRaw, // Añadido para el filtro de mes
     fechaFin:    item[CONFIG.campos.fechaFin] || null,
   };
 }
 
 // ══════════════════════════════════════════════════
-// FILTROS DINÁMICOS — se llenan con datos reales
+// FILTROS DINÁMICOS Y MES
 // ══════════════════════════════════════════════════
 function poblarFiltrosDinamicos() {
-  // Estados únicos reales de SharePoint
-  poblarSelect('f-estado',
-    [...new Set(todosLosTickets.map(t => t.estado))].sort()
-  );
-  // Gestionadores únicos
-  poblarSelect('f-gestionador',
-    [...new Set(todosLosTickets.map(t => t.gestionador))].filter(v => v !== '—').sort()
-  );
-  // Satisfacción única
-  poblarSelect('f-satisfaccion',
-    [...new Set(todosLosTickets.map(t => t.satisfaccion))].filter(v => v !== '—').sort()
-  );
+  // 1. POBLAR EL FILTRO DE MESES
+  const mesesValidos = [...new Set(todosLosTickets.map(t => t.mesRaw))].filter(Boolean).sort().reverse();
+  const selectMes = document.getElementById('f-mes');
+  selectMes.innerHTML = '<option value="">Histórico (Todos los meses)</option>';
+  
+  mesesValidos.forEach(m => {
+      const [y, mo] = m.split('-');
+      const date = new Date(y, mo-1, 1);
+      let str = date.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' });
+      str = str.charAt(0).toUpperCase() + str.slice(1).replace(' de ', ' '); // Ej: "Mayo 2026"
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = str;
+      selectMes.appendChild(opt);
+  });
+
+  // SELECCIONAR MES ACTUAL POR DEFECTO
+  if (mesesValidos.length > 0) {
+      const mAhora = new Date();
+      const currentMonthRaw = `${mAhora.getFullYear()}-${String(mAhora.getMonth()+1).padStart(2,'0')}`;
+      // Si existe el mes actual en los datos lo selecciona, sino selecciona el más reciente
+      selectMes.value = mesesValidos.includes(currentMonthRaw) ? currentMonthRaw : mesesValidos[0];
+  }
+
+  // 2. ESTADOS HÍBRIDOS (Mantiene siempre los estados oficiales aunque haya 0 tickets)
+  const estadosOficiales = ['Atendido', 'En Gestion', 'En Proceso', 'Cancelado', 'Cierre Justificado'];
+  const estadosReales = todosLosTickets.map(t => t.estado);
+  poblarSelect('f-estado', [...new Set([...estadosOficiales, ...estadosReales])].filter(v => v !== '—' && v !== '').sort());
+
+  // 3. RESTO DE FILTROS
+  poblarSelect('f-gestionador', [...new Set(todosLosTickets.map(t => t.gestionador))].filter(v => v !== '—').sort());
+  poblarSelect('f-satisfaccion', [...new Set(todosLosTickets.map(t => t.satisfaccion))].filter(v => v !== '—').sort());
 }
 
 function poblarSelect(id, valores) {
   const sel = document.getElementById(id);
-  // Guardar primera opción ("Todos")
   const primera = sel.options[0];
   sel.innerHTML = '';
   sel.appendChild(primera);
@@ -439,7 +456,6 @@ function poblarSelect(id, valores) {
   });
 }
 
-// Diagnóstico: muestra los valores EXACTOS que vienen de SharePoint
 function activarDiagnostico() {
   const estadosUnicos = [...new Set(todosLosTickets.map(t => t.estado))];
   const conteos = estadosUnicos.map(e => {
@@ -447,15 +463,15 @@ function activarDiagnostico() {
     return `"${e}" → ${n}`;
   });
   setText('debug-estados', conteos.join(' | '));
-  // Mostrar solo si hay discrepancias (para debug). 
-  // Puedes ocultar esto después comentando la siguiente línea:
-  document.getElementById('debug-bar').style.display = 'block';
+  // Ocultado por defecto para no molestar la vista, pero listo en el código
+  // document.getElementById('debug-bar').style.display = 'block';
 }
 
 // ══════════════════════════════════════════════════
-// FILTROS
+// FILTROS APLICACIÓN
 // ══════════════════════════════════════════════════
 function aplicarFiltros() {
+  const mes  = document.getElementById('f-mes').value;
   const enc  = document.getElementById('f-encargado').value;
   const est  = document.getElementById('f-estado').value;
   const gest = document.getElementById('f-gestionador').value;
@@ -467,16 +483,15 @@ function aplicarFiltros() {
   const has  = document.getElementById('f-hasta').value;
 
   ticketsFiltrados = todosLosTickets.filter(t => {
-    // Comparación exacta para encargado (viene limpio con .trim())
+    if (mes  && t.mesRaw !== mes) return false;
     if (enc  && t.encargado   !== enc)  return false;
-    // Comparación exacta con valor real de SharePoint (del select dinámico)
     if (est  && t.estado      !== est)  return false;
     if (gest && t.gestionador !== gest) return false;
     if (sat  && t.satisfaccion!== sat)  return false;
     if (area && t.area        !== area) return false;
     if (tipo && t.tipo        !== tipo) return false;
     if (sla  && calcularSLA(t).estado !== sla) return false;
-    if (des  && new Date(t.created) < new Date(des))                 return false;
+    if (des  && new Date(t.created) < new Date(des))                  return false;
     if (has  && new Date(t.created) > new Date(has + 'T23:59:59'))   return false;
     return true;
   });
@@ -487,6 +502,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
+  // Nota: No limpiamos el 'f-mes' para no mandar al usuario al abismo histórico de golpe
   ['f-encargado','f-estado','f-gestionador','f-satisfaccion',
    'f-area','f-tipo','f-sla','f-desde','f-hasta']
     .forEach(id => document.getElementById(id).value = '');
@@ -494,7 +510,7 @@ function limpiarFiltros() {
 }
 
 // ══════════════════════════════════════════════════
-// SLA
+// SLA (CORREGIDO PARA MOSTRAR AMARILLOS)
 // ══════════════════════════════════════════════════
 function calcularSLA(t) {
   const ahora  = new Date();
@@ -505,9 +521,17 @@ function calcularSLA(t) {
     ? (new Date(t.fechaFin) - inicio) / 60000
     : (ahora - inicio) / 60000;
   const pct = trans / est;
-  const estado = cerrado
-    ? (pct <= 1 ? 'verde' : 'rojo')
-    : (pct < 0.8 ? 'verde' : pct < 1 ? 'amarillo' : 'rojo');
+
+  // NUEVA REGLA: Aplica para todos los tickets (Cerrados o Abiertos)
+  let estado;
+  if (pct < 0.8) {
+    estado = 'verde';      // Menos del 80% del tiempo = OK
+  } else if (pct <= 1.0) {
+    estado = 'amarillo';   // Entre el 80% y el 100% = RIESGO / AL LÍMITE
+  } else {
+    estado = 'rojo';       // Se pasó del 100% = VENCIDO
+  }
+
   return { trans: Math.round(trans), est, pct, estado };
 }
 
@@ -528,7 +552,6 @@ function fFecha(iso) {
 // ══════════════════════════════════════════════════
 function renderKPIs() {
   const tot = ticketsFiltrados.length;
-  // Usamos esCerrado() para clasificar correctamente sin importar tildes
   const ab  = ticketsFiltrados.filter(t => !esCerrado(t.estado)).length;
   const ce  = ticketsFiltrados.filter(t =>  esCerrado(t.estado)).length;
   let vd=0, am=0, ro=0;
@@ -549,7 +572,7 @@ function renderKPIs() {
 // ══════════════════════════════════════════════════
 function renderTabla() {
   const tbody = document.getElementById('tbody');
-  setText('table-count', ticketsFiltrados.length + ' tickets');
+  setText('table-count', ticketsFiltrados.length + ' tickets en este mes/selección');
   if (!ticketsFiltrados.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Sin tickets con estos filtros</td></tr>';
     return;
@@ -615,7 +638,7 @@ function renderGraficas() {
     const s=calcularSLA(t).estado;
     if(s==='verde')vd++; else if(s==='amarillo')am++; else ro++;
   });
-  mkLegend('leg-sla',['Verde (OK)','Amarillo','Rojo'],[vd,am,ro],['#1D9E75','#EF9F27','#E24B4A']);
+  mkLegend('leg-sla',['Verde (OK)','Amarillo (Riesgo)','Rojo (Vencido)'],[vd,am,ro],['#1D9E75','#EF9F27','#E24B4A']);
   mkChart('chart-sla','doughnut',['Verde','Amarillo','Rojo'],[vd,am,ro],['#1D9E75','#EF9F27','#E24B4A']);
 
   // Técnico
