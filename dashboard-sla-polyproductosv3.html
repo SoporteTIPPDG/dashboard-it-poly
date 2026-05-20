@@ -300,7 +300,6 @@ async function cargarDatos(forceSync = false) {
     ticketsFiltrados = [...todosLosTickets];
     mostrarDashboard();
     aplicarFiltros();
-    // Actualizamos el letrero para avisar que es caché
     document.getElementById('last-update').textContent = '⚡ Caché rápido cargado';
   } else {
     mostrarEstado('cargando');
@@ -377,15 +376,16 @@ function procesarItem(item) {
 function debounceFiltros() {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    currentPage = 1; // Al filtrar, regresamos a la pag 1
+    currentPage = 1; 
     aplicarFiltros();
-  }, 300); // 300ms de retraso para evitar lag
+  }, 300); 
 }
 
 function poblarFiltrosDinamicos() {
+  // Filtro Mes
   const mesesValidos = [...new Set(todosLosTickets.map(t => t.mesRaw))].filter(Boolean).sort().reverse();
   const selectMes = document.getElementById('f-mes');
-  const actualMes = selectMes.value; // Guardar selección actual
+  const actualMes = selectMes.value;
   selectMes.innerHTML = '<option value="">Histórico Completo</option>';
   
   mesesValidos.forEach(m => {
@@ -402,20 +402,21 @@ function poblarFiltrosDinamicos() {
       selectMes.value = actualMes;
   }
 
-  // Estados Híbridos (Mantiene los oficiales siempre)
+  // RESTO DE FILTROS CORREGIDOS (Se agrega el tercer parámetro con el texto default)
   const estOficiales = ['Atendido', 'En Gestion', 'En Proceso', 'Cancelado', 'Cierre Justificado'];
-  poblarSelect('f-estado', [...new Set([...estOficiales, ...todosLosTickets.map(t=>t.estado)])].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-estado', [...new Set([...estOficiales, ...todosLosTickets.map(t=>t.estado)])].filter(v=>v!=='—'&&v!=='').sort(), 'Todos');
   
-  poblarSelect('f-encargado', [...new Set(todosLosTickets.map(t=>t.encargado))].filter(v=>v!=='—'&&v!=='').sort());
-  poblarSelect('f-gestionador', [...new Set(todosLosTickets.map(t=>t.gestionador))].filter(v=>v!=='—'&&v!=='').sort());
-  poblarSelect('f-satisfaccion', [...new Set(todosLosTickets.map(t=>t.satisfaccion))].filter(v=>v!=='—'&&v!=='').sort());
-  poblarSelect('f-area', [...new Set(todosLosTickets.map(t=>t.area))].filter(v=>v!=='—'&&v!=='').sort());
-  poblarSelect('f-tipo', [...new Set(todosLosTickets.map(t=>t.tipo))].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-encargado', [...new Set(todosLosTickets.map(t=>t.encargado))].filter(v=>v!=='—'&&v!=='').sort(), 'Todos');
+  poblarSelect('f-gestionador', [...new Set(todosLosTickets.map(t=>t.gestionador))].filter(v=>v!=='—'&&v!=='').sort(), 'Todos');
+  poblarSelect('f-satisfaccion', [...new Set(todosLosTickets.map(t=>t.satisfaccion))].filter(v=>v!=='—'&&v!=='').sort(), 'Todas');
+  poblarSelect('f-area', [...new Set(todosLosTickets.map(t=>t.area))].filter(v=>v!=='—'&&v!=='').sort(), 'Todas');
+  poblarSelect('f-tipo', [...new Set(todosLosTickets.map(t=>t.tipo))].filter(v=>v!=='—'&&v!=='').sort(), 'Todos');
 }
 
-function poblarSelect(id, vals) {
+// CORRECCIÓN APLICADA: Ahora acepta el textoDefault en vez de buscar un option previo
+function poblarSelect(id, vals, textoDefault) {
   const sel = document.getElementById(id), curr = sel.value;
-  sel.innerHTML = `<option value="">${sel.options[0].text}</option>`;
+  sel.innerHTML = `<option value="">${textoDefault}</option>`;
   vals.forEach(v => sel.appendChild(new Option(v, v)));
   sel.value = curr;
 }
