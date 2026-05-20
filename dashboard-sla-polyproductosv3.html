@@ -242,6 +242,8 @@ const itemsPerPage = 50;
 // Variables de Caché y Debounce
 let debounceTimer;
 
+const COLORES = ['#1D9E75','#378ADD','#BA7517','#D85A30','#7F77DD','#888780','#D4537E','#639922','#E24B4A'];
+
 // ══════════════════════════════════════════════════
 // HELPERS (Limpieza, SLA, Paginación, etc.)
 // ══════════════════════════════════════════════════
@@ -454,7 +456,7 @@ function limpiarFiltros() {
 }
 
 // ══════════════════════════════════════════════════
-// RENDER KPI & GRÁFICAS
+// RENDER KPI & GRÁFICAS (CORREGIDO PARA CHART.JS V4)
 // ══════════════════════════════════════════════════
 function renderKPIs() {
   const tot = ticketsFiltrados.length, ab = ticketsFiltrados.filter(t=>!esCerrado(t.estado)).length, ce = tot - ab;
@@ -466,18 +468,77 @@ function renderKPIs() {
 }
 
 function renderGraficas() {
-  Object.values(chartInstances).forEach(c => c.destroy());
-  const contar = (c) => ticketsFiltrados.reduce((acc,t)=>{acc[t[c]]=(acc[t[c]]||0)+1; return acc;},{});
-  const mkC = (id, type, lab, dat, col) => {
-    document.getElementById('leg-'+id).innerHTML = lab.map((l,i)=>`<span class="legend-item"><span class="legend-sq" style="background:${col[i%col.length]}"></span>${l} (${dat[i]})</span>`).join('');
-    chartInstances[id] = new Chart(document.getElementById('chart-'+id), { type, data: { labels:lab, datasets:[{ data:dat, backgroundColor:col, borderWidth:0, borderRadius: type==='bar'?4:0 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales: type==='bar'?{x:{ticks:{font:{size:9}}},y:{ticks:{stepSize:1,font:{size:9}}}}:{} } });
-  };
-  
-  let v=0,a=0,r=0; ticketsFiltrados.forEach(t=>{const s=calcularSLA(t).estado; if(s==='verde')v++;else if(s==='amarillo')a++;else r++;});
-  mkC('sla', 'doughnut', ['OK','Riesgo','Vencido'], [v,a,r], ['#1D9E75','#EF9F27','#E24B4A']);
-  const ed=contar('encargado'), el=Object.keys(ed); mkC('enc', 'doughnut', el, Object.values(ed), el.map((_,i)=>COLORES[i%COLORES.length]));
-  const ad=Object.entries(contar('area')).sort((a,b)=>b[1]-a[1]).slice(0,8); mkC('area', 'bar', ad.map(x=>x[0]), ad.map(x=>x[1]), ad.map((_,i)=>COLORES[i%COLORES.length]));
-  const td=Object.entries(contar('tipo')).sort((a,b)=>b[1]-a[1]).slice(0,8); mkC('tipo', 'bar', td.map(x=>x[0]), td.map(x=>x[1]), td.map((_,i)=>COLORES[i%COLORES.length]));
+  // Función auxiliar para contar elementos repetidos
+  const contar = (campo) => ticketsFiltrados.reduce((acc, t) => { 
+    const v = t[campo] || 'Sin dato';
+    acc[v] = (acc[v] || 0) + 1; 
+    return acc; 
+  }, {});
+
+  // Creador de gráficas seguro (destruye correctamente para liberar memoria)
+  function buildChart(id, type, labels, data, colors) {
+    if (chartInstances[id]) { chartInstances[id].destroy(); }
+    
+    const legendEl = document.getElementById('leg-' + id);
+    if (!labels || labels.length === 0) {
+      legendEl.innerHTML = '<span style="color:#999">Sin datos para graficar</span>';
+      return;
+    }
+
+    legendEl.innerHTML = labels.map((l, i) => 
+      `<span class="legend-item"><span class="legend-sq" style="background:${colors[i % colors.length]}"></span>${l} (${data[i]})</span>`
+    ).join('');
+
+    const config = {
+      type: type,
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors,
+          borderWidth: 0,
+          borderRadius: type === 'bar' ? 4 : 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    };
+
+    // Solo agregar 'scales' si es gráfica de barras, evita errores en las de dona
+    if (type === 'bar') {
+      config.options.scales = {
+        x: { ticks: { font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.05)' } }
+      };
+    }
+
+    chartInstances[id] = new Chart(document.getElementById('chart-' + id), config);
+  }
+
+  // 1. SLA
+  let v = 0, a = 0, r = 0;
+  ticketsFiltrados.forEach(t => {
+    const s = calcularSLA(t).estado;
+    if (s === 'verde') v++; else if (s === 'amarillo') a++; else r++;
+  });
+  buildChart('sla', 'doughnut', ['OK', 'Riesgo', 'Vencido'], [v, a, r], ['#1D9E75', '#EF9F27', '#E24B4A']);
+
+  // 2. Encargado
+  const ed = contar('encargado');
+  const el = Object.keys(ed);
+  const ev = Object.values(ed);
+  buildChart('enc', 'doughnut', el, ev, el.map((_, i) => COLORES[i % COLORES.length]));
+
+  // 3. Área (Top 8)
+  const ad = Object.entries(contar('area')).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  buildChart('area', 'bar', ad.map(x => x[0]), ad.map(x => x[1]), ad.map((_, i) => COLORES[i % COLORES.length]));
+
+  // 4. Tipo (Top 8)
+  const td = Object.entries(contar('tipo')).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  buildChart('tipo', 'bar', td.map(x => x[0]), td.map(x => x[1]), td.map((_, i) => COLORES[i % COLORES.length]));
 }
 
 // ══════════════════════════════════════════════════
