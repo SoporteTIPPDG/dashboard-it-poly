@@ -7,15 +7,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://alcdn.msauth.net/browser/2.37.1/js/msal-browser.min.js"></script>
 <style>
+/* ── Variables y Base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f5f6f8;--surface:#fff;--border:#e2e4e9;--text:#1a1d23;--muted:#6b7280;
   --green:#1D9E75;--green-bg:#E1F5EE;--amber:#BA7517;--amber-bg:#FAEEDA;
-  --red:#A32D2D;--red-bg:#FCEBEB;--radius:10px;
+  --red:#A32D2D;--red-bg:#FCEBEB;--blue:#185FA5;--radius:10px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
 
-/* Header */
+/* ── Header ── */
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-left{display:flex;align-items:center;gap:12px}
 .logo{width:36px;height:36px;background:#0F6E56;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700}
@@ -28,10 +29,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-refresh{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s}
 .btn-refresh:hover{background:var(--bg);color:var(--text)}
 
-/* Layout */
+/* ── Layout ── */
 .main{padding:24px 28px;max-width:1500px;margin:0 auto}
 
-/* Estado */
+/* ── Pantalla de Carga ── */
 .state-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:48px;text-align:center;color:var(--muted);font-size:14px;margin-bottom:20px}
 .state-panel .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -39,7 +40,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .state-panel.error .etitle{color:var(--red);font-weight:600;margin-bottom:8px;font-size:15px}
 .state-panel.error .ehint{font-size:12px;margin-top:12px;color:var(--muted);line-height:1.6}
 
-/* KPIs */
+/* ── KPIs ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
 .kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;font-weight:500}
@@ -49,7 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kpi-value.red{color:var(--red)}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
 
-/* Filtros */
+/* ── Filtros ── */
 .filters{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px}
 .filters-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
 .filters-row:last-child{margin-bottom:0}
@@ -59,11 +60,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-clear{font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all .15s;margin-left:auto;white-space:nowrap}
 .btn-clear:hover{background:var(--bg);color:var(--text)}
 
-/* Diagnóstico de estados */
-.debug-bar{background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:10px 16px;font-size:12px;color:#7B5800;margin-bottom:16px;display:none}
-.debug-bar strong{font-weight:600}
-
-/* Gráficas */
+/* ── Gráficas ── */
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-bottom:20px}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
 .chart-card h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px}
@@ -72,11 +69,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .legend-item{display:flex;align-items:center;gap:4px}
 .legend-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
 
-/* Tabla */
+/* ── Tabla y Paginación ── */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
 .table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .table-header h2{font-size:14px;font-weight:600}
+.table-controls {display:flex; align-items:center; gap: 14px;}
 .table-count{font-size:12px;color:var(--muted)}
+.btn-export{background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.btn-export:hover{background:#158260;}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead th{text-align:left;padding:9px 13px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg)}
@@ -84,7 +84,13 @@ tbody td{padding:10px 13px;border-bottom:1px solid var(--border);white-space:now
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--bg)}
 
-/* Badges */
+.pagination{padding:12px 18px; display:flex; justify-content:flex-end; align-items:center; gap:12px; background:var(--surface); border-top:1px solid var(--border);}
+.pagination button{padding:6px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); cursor:pointer; font-size:11px; color:var(--text);}
+.pagination button:disabled{opacity:0.5; cursor:not-allowed;}
+.pagination button:hover:not(:disabled){background:#e5e7eb;}
+.pagination-info{font-size:12px; color:var(--muted);}
+
+/* ── Badges ── */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
 .badge::before{content:'●';font-size:9px}
 .badge-verde{background:var(--green-bg);color:var(--green)}
@@ -93,9 +99,11 @@ tbody tr:hover td{background:var(--bg)}
 .badge-estado{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500;background:var(--bg);color:var(--muted);border:1px solid var(--border)}
 .sat-badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;background:#F0F4FF;color:#3B5CC4;border:1px solid #C3CFF7}
 .empty-row td{text-align:center;padding:40px!important;color:var(--muted)}
-
-/* Footer */
 .footer{text-align:center;font-size:11px;color:var(--muted);padding:16px 0 28px}
+
+/* Ocultar scrollbars feos */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -110,22 +118,20 @@ tbody tr:hover td{background:var(--bg)}
   </div>
   <div class="header-right">
     <span id="last-update" style="font-size:12px;color:var(--muted)"></span>
-    <div class="badge-live"><div class="dot"></div>Datos en vivo</div>
-    <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+    <div class="badge-live"><div class="dot"></div>En vivo</div>
+    <button class="btn-refresh" onclick="cargarDatos(true)">↻ Sincronizar Data</button>
   </div>
 </header>
 
 <main class="main">
-
   <div id="state-panel" class="state-panel">
     <div class="spinner"></div>
-    <p id="state-text">Iniciando conexión segura con Microsoft 365...</p>
+    <p id="state-text">Validando caché y conectando con Microsoft 365...</p>
   </div>
 
   <div id="dashboard-content" style="display:none">
-
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-label">Total Tickets</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">en el período</div></div>
+      <div class="kpi"><div class="kpi-label">Total Tickets</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">en la selección</div></div>
       <div class="kpi"><div class="kpi-label">En Gestión / Proceso</div><div class="kpi-value amber" id="k-abiertos">—</div><div class="kpi-sub">tickets activos</div></div>
       <div class="kpi"><div class="kpi-label">Atendidos</div><div class="kpi-value green" id="k-cerrados">—</div><div class="kpi-sub">resueltos</div></div>
       <div class="kpi"><div class="kpi-label">SLA Vencido 🔴</div><div class="kpi-value red" id="k-vencidos">—</div><div class="kpi-sub">superaron tiempo est.</div></div>
@@ -133,94 +139,46 @@ tbody tr:hover td{background:var(--bg)}
       <div class="kpi"><div class="kpi-label">% SLA Cumplido</div><div class="kpi-value green" id="k-pct">—</div><div class="kpi-sub">dentro del tiempo</div></div>
     </div>
 
-    <div class="debug-bar" id="debug-bar">
-      <strong>🔍 Diagnóstico estados reales de SharePoint:</strong> <span id="debug-estados"></span>
-    </div>
-
     <div class="filters">
       <div class="filters-row">
-        <label style="color:#185FA5; font-size:13px;">🗓️ Mes</label>
-        <select id="f-mes" onchange="aplicarFiltros()" style="border: 2px solid #185FA5; font-weight: bold; color: #185FA5;"></select>
+        <label style="color:var(--blue); font-size:13px;">🗓️ Mes</label>
+        <select id="f-mes" onchange="debounceFiltros()" style="border: 2px solid var(--blue); font-weight: bold; color: var(--blue);"></select>
 
-        <label>Técnico</label>
-        <select id="f-encargado" onchange="aplicarFiltros()">
-          <option value="">Todos</option>
-          <option>Soporte It</option>
-          <option>Desarrollo It</option>
-        </select>
-
-        <label>Estado</label>
-        <select id="f-estado" onchange="aplicarFiltros()">
-          <option value="">Todos</option>
-        </select>
-
-        <label>Gestionador</label>
-        <select id="f-gestionador" onchange="aplicarFiltros()">
-          <option value="">Todos</option>
-        </select>
-
-        <label>Satisfacción</label>
-        <select id="f-satisfaccion" onchange="aplicarFiltros()">
-          <option value="">Todas</option>
-        </select>
-
+        <label>Técnico</label><select id="f-encargado" onchange="debounceFiltros()"></select>
+        <label>Estado</label><select id="f-estado" onchange="debounceFiltros()"></select>
+        <label>Gestionador</label><select id="f-gestionador" onchange="debounceFiltros()"></select>
+        <label>Satisfacción</label><select id="f-satisfaccion" onchange="debounceFiltros()"></select>
         <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
       </div>
-
       <div class="filters-row">
-        <label>Área</label>
-        <select id="f-area" onchange="aplicarFiltros()">
-          <option value="">Todas</option>
-          <option>Bodega</option>
-          <option>Administración</option>
-          <option>Control de Calidad</option>
-          <option>Planta Empaques Industriales</option>
-          <option>Planta Telas Agrotextiles</option>
-          <option>Planta Pita y Lazo</option>
-          <option>Mantenimiento</option>
-          <option>Seguridad</option>
-          <option>Informática</option>
-          <option>Gerencia</option>
-          <option>RRHH</option>
-        </select>
-
-        <label>Tipo</label>
-        <select id="f-tipo" onchange="aplicarFiltros()">
-          <option value="">Todos</option>
-          <option>SGSystem</option><option>SAP</option><option>Wifi/Red</option>
-          <option>Impresoras</option><option>Office</option><option>Windows</option>
-          <option>Problema de computadora</option><option>Otros soporte</option>
-          <option>Otros Desarrollo</option><option>ZK</option><option>Biometricos</option>
-          <option>Zebras/Tablets</option><option>Maestro De Ingeniería</option>
-          <option>Impresoras Zebra</option><option>Saldo de Impresión</option>
-        </select>
-
+        <label>Área</label><select id="f-area" onchange="debounceFiltros()"></select>
+        <label>Tipo</label><select id="f-tipo" onchange="debounceFiltros()"></select>
         <label>SLA</label>
-        <select id="f-sla" onchange="aplicarFiltros()">
+        <select id="f-sla" onchange="debounceFiltros()">
           <option value="">Todo</option>
           <option value="verde">🟢 Verde (OK)</option>
           <option value="amarillo">🟡 Amarillo (Riesgo)</option>
           <option value="rojo">🔴 Rojo (Vencido)</option>
         </select>
-
-        <label>Desde</label>
-        <input type="date" id="f-desde" onchange="aplicarFiltros()">
-        <label>Hasta</label>
-        <input type="date" id="f-hasta" onchange="aplicarFiltros()">
+        <label>Desde</label><input type="date" id="f-desde" onchange="debounceFiltros()">
+        <label>Hasta</label><input type="date" id="f-hasta" onchange="debounceFiltros()">
       </div>
     </div>
 
     <div class="charts-grid">
       <div class="chart-card"><h3>Estado SLA</h3><div class="legend" id="leg-sla"></div><div class="chart-wrap"><canvas id="chart-sla"></canvas></div></div>
       <div class="chart-card"><h3>Tickets por técnico</h3><div class="legend" id="leg-enc"></div><div class="chart-wrap"><canvas id="chart-enc"></canvas></div></div>
-      <div class="chart-card"><h3>Tickets por área</h3><div class="legend" id="leg-area"></div><div class="chart-wrap"><canvas id="chart-area"></canvas></div></div>
-      <div class="chart-card"><h3>Tipo de gestión</h3><div class="legend" id="leg-tipo"></div><div class="chart-wrap"><canvas id="chart-tipo"></canvas></div></div>
+      <div class="chart-card"><h3>Top Áreas</h3><div class="legend" id="leg-area"></div><div class="chart-wrap"><canvas id="chart-area"></canvas></div></div>
+      <div class="chart-card"><h3>Top Tipos de Gestión</h3><div class="legend" id="leg-tipo"></div><div class="chart-wrap"><canvas id="chart-tipo"></canvas></div></div>
     </div>
 
     <div class="table-card">
       <div class="table-header">
         <h2>Detalle de tickets</h2>
-        <span class="table-count" id="table-count"></span>
+        <div class="table-controls">
+          <span class="table-count" id="table-count"></span>
+          <button class="btn-export" onclick="exportarCSV()">⬇ Exportar CSV</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -234,18 +192,20 @@ tbody tr:hover td{background:var(--bg)}
           <tbody id="tbody"></tbody>
         </table>
       </div>
+      <div class="pagination">
+        <button id="btn-prev" onclick="cambiarPagina(-1)">Anterior</button>
+        <span class="pagination-info" id="page-info">Página 1 de 1</span>
+        <button id="btn-next" onclick="cambiarPagina(1)">Siguiente</button>
+      </div>
     </div>
-
   </div>
 </main>
 
-<div class="footer">
-  Dashboard SLA · Soporte IT Polyproductos · <span id="footer-count">—</span> tickets cargados desde SharePoint
-</div>
+<div class="footer">Dashboard SLA · Soporte IT Polyproductos</div>
 
 <script>
 // ══════════════════════════════════════════════════
-// CONFIGURACIÓN MSAL (App Registration)
+// CONFIGURACIÓN MSAL Y SHAREPOINT
 // ══════════════════════════════════════════════════
 const msalConfig = {
   auth: {
@@ -258,44 +218,50 @@ const msalConfig = {
 const msalInstance = new window.msal.PublicClientApplication(msalConfig);
 const tokenRequest = { scopes: ['https://polyproductos.sharepoint.com/.default'] };
 
-// ══════════════════════════════════════════════════
-// CONFIGURACIÓN DEL DASHBOARD
-// ══════════════════════════════════════════════════
 const CONFIG = {
   spSiteUrl: 'https://polyproductos.sharepoint.com/sites/GestionesIT',
   listName:  'DB_GESTIONESIT',
-  topItems:  4999,
+  topItems:  4999, // Trae casi 5 mil registros. Con paginación ya no hay problema de lentitud.
   campos: {
-    id:          'ID',
-    gestionador: 'Gestionador',
-    encargado:   'Encargado',
-    area:        'Ingrese_x0020_el_x0020__x00e1_re',
-    tipo:        'Tipo_x0020_de_x0020_gesti_x00f3_',
-    estado:      'Estado',
-    descripcion: 'Descripci_x00f3_n_x0020_de_x0020',
-    tiempoEst:   'TiempoEstimado',
-    created:     'Created',
-    fechaFin:    'FechaFin',
-    satisfaccion:'Satisfaccion',
+    id: 'ID', gestionador: 'Gestionador', encargado: 'Encargado',
+    area: 'Ingrese_x0020_el_x0020__x00e1_re', tipo: 'Tipo_x0020_de_x0020_gesti_x00f3_',
+    estado: 'Estado', tiempoEst: 'TiempoEstimado', created: 'Created',
+    fechaFin: 'FechaFin', satisfaccion: 'Satisfaccion'
   },
-  estadosCerradosNorm: ['atendido', 'cancelado', 'cierre justificado'],
+  estadosCerradosNorm: ['atendido', 'cancelado', 'cierre justificado']
 };
 
 let todosLosTickets  = [];
 let ticketsFiltrados = [];
 let chartInstances   = {};
-const COLORES = ['#1D9E75','#378ADD','#BA7517','#D85A30','#7F77DD','#888780','#D4537E','#639922','#E24B4A'];
+
+// Variables de Paginación
+let currentPage = 1;
+const itemsPerPage = 50;
+
+// Variables de Caché y Debounce
+let debounceTimer;
 
 // ══════════════════════════════════════════════════
-// NORMALIZACIÓN
+// HELPERS (Limpieza, SLA, Paginación, etc.)
 // ══════════════════════════════════════════════════
-function norm(str) {
-  if (!str) return '';
-  return String(str).trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function norm(str) { return String(str||'').trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function esCerrado(estado) { return CONFIG.estadosCerradosNorm.includes(norm(estado)); }
+
+function fMin(m) {
+  if (m < 0) return '0min';
+  if (m < 60) return m + 'min';
+  const h = Math.floor(m/60), r = m%60;
+  return h + 'h' + (r ? ' ' + r + 'min' : '');
 }
+function fFecha(iso) { return !iso ? '—' : new Date(iso).toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
 
-function esCerrado(estado) {
-  return CONFIG.estadosCerradosNorm.includes(norm(estado));
+function calcularSLA(t) {
+  const inicio = new Date(t.created), est = t.tiempoEst || 480, cerrado = esCerrado(t.estado);
+  const trans = cerrado && t.fechaFin ? (new Date(t.fechaFin) - inicio) / 60000 : (new Date() - inicio) / 60000;
+  const pct = trans / est;
+  let estado = (pct < 0.8) ? 'verde' : (pct <= 1.0) ? 'amarillo' : 'rojo';
+  return { trans: Math.round(trans), est, pct, estado };
 }
 
 // ══════════════════════════════════════════════════
@@ -305,7 +271,7 @@ async function obtenerToken() {
   try {
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length === 0) {
-      setText('state-text', 'Esperando inicio de sesión...');
+      document.getElementById('state-text').textContent = 'Esperando inicio de sesión...';
       const res = await msalInstance.loginPopup(tokenRequest);
       msalInstance.setActiveAccount(res.account);
       return res.accessToken;
@@ -318,387 +284,280 @@ async function obtenerToken() {
       const res = await msalInstance.loginPopup(tokenRequest);
       return res.accessToken;
     }
-    throw new Error('No se pudo iniciar sesión: ' + e.message);
+    throw new Error('Falló el login de Microsoft 365.');
   }
 }
 
 // ══════════════════════════════════════════════════
-// CARGA DE DATOS
+// CARGA DE DATOS (CON CACHÉ LOCAL)
 // ══════════════════════════════════════════════════
-async function cargarDatos() {
-  mostrarEstado('cargando');
+async function cargarDatos(forceSync = false) {
+  // 1. Intentar cargar del caché local primero (Carga ultrarrápida)
+  const localCache = localStorage.getItem('dashITCache');
+  if (localCache && !forceSync) {
+    todosLosTickets = JSON.parse(localCache);
+    poblarFiltrosDinamicos();
+    ticketsFiltrados = [...todosLosTickets];
+    mostrarDashboard();
+    aplicarFiltros();
+    // Actualizamos el letrero para avisar que es caché
+    document.getElementById('last-update').textContent = '⚡ Caché rápido cargado';
+  } else {
+    mostrarEstado('cargando');
+  }
+
+  // 2. Traer info fresca de SharePoint en segundo plano
   try {
     const token = await obtenerToken();
-    setText('state-text', 'Descargando tickets de SharePoint...');
+    if(!localCache || forceSync) document.getElementById('state-text').textContent = 'Descargando datos de SharePoint...';
 
     const fields = Object.values(CONFIG.campos).join(',');
-    const url = `${CONFIG.spSiteUrl}/_api/lists/getbytitle('${CONFIG.listName}')/items`
-      + `?$top=${CONFIG.topItems}&$orderby=ID desc&$select=${fields}`;
-
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json;odata=verbose',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const url = `${CONFIG.spSiteUrl}/_api/lists/getbytitle('${CONFIG.listName}')/items?$top=${CONFIG.topItems}&$orderby=ID desc&$select=${fields}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json;odata=verbose', 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    const items = json.d?.results;
-    if (!items) throw new Error('Respuesta inesperada de SharePoint. Verifica el nombre de la lista.');
-
-    todosLosTickets = items.map(normalizar);
-
+    
+    let nuevosTickets = (json.d?.results||[]).map(procesarItem);
+    
     if (json.d.__next) {
-      setText('state-text', 'Cargando más tickets...');
-      await cargarPaginas(json.d.__next, token);
+      if(!localCache || forceSync) document.getElementById('state-text').textContent = 'Descargando histórico...';
+      nuevosTickets = await cargarPaginas(json.d.__next, token, nuevosTickets);
     }
 
+    // Actualizamos el arreglo global y guardamos en caché
+    todosLosTickets = nuevosTickets;
+    try { localStorage.setItem('dashITCache', JSON.stringify(todosLosTickets)); } catch(err) { console.warn("Caché lleno", err); }
+    
+    // Repintamos la UI con los datos actualizados
     poblarFiltrosDinamicos();
-    activarDiagnostico();
-
-    setText('last-update', 'Actualizado ' + new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'}));
-    setText('footer-count', todosLosTickets.length);
-    ticketsFiltrados = [...todosLosTickets];
+    document.getElementById('last-update').textContent = '✅ Sincronizado ' + new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'});
+    aplicarFiltros(); 
     mostrarDashboard();
 
   } catch(e) {
-    console.error(e);
-    mostrarError(e.message);
+    if(!localCache) mostrarError(e.message);
+    else document.getElementById('last-update').textContent = '⚠️ Sin conexión (Mostrando caché)';
   }
 }
 
-async function cargarPaginas(nextUrl, token) {
+async function cargarPaginas(nextUrl, token, arrayAcumulado) {
   try {
-    const res = await fetch(nextUrl, {
-      headers: { 'Accept':'application/json;odata=verbose', 'Authorization':`Bearer ${token}` }
-    });
-    if (!res.ok) return;
+    const res = await fetch(nextUrl, { headers: { 'Accept':'application/json;odata=verbose', 'Authorization':`Bearer ${token}` } });
+    if (!res.ok) return arrayAcumulado;
     const json = await res.json();
-    todosLosTickets = todosLosTickets.concat((json.d?.results||[]).map(normalizar));
-    if (json.d.__next) await cargarPaginas(json.d.__next, token);
-  } catch(e) { console.warn('Paginación parcial:', e); }
+    arrayAcumulado = arrayAcumulado.concat((json.d?.results||[]).map(procesarItem));
+    if (json.d.__next) return await cargarPaginas(json.d.__next, token, arrayAcumulado);
+  } catch(e) { console.warn('Paginación falló', e); }
+  return arrayAcumulado;
 }
 
-function normalizar(item) {
+function procesarItem(item) {
   const created = item[CONFIG.campos.created];
-  
-  // Extraer el mes crudo (Ej: "2026-05") para el filtro
   let mesRaw = '';
   if (created) {
     const d = new Date(created);
     mesRaw = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }
-
   return {
-    id:          item[CONFIG.campos.id],
-    gestionador: (item[CONFIG.campos.gestionador] || '—').trim(),
-    encargado:   (item[CONFIG.campos.encargado]   || '—').trim(),
-    area:        (item[CONFIG.campos.area]         || '—').trim(),
-    tipo:        (item[CONFIG.campos.tipo]         || '—').trim(),
-    estado:      (item[CONFIG.campos.estado]       || '—').trim(),
-    satisfaccion:(item[CONFIG.campos.satisfaccion] || '—').trim(),
-    tiempoEst:   parseFloat(item[CONFIG.campos.tiempoEst]) || 480,
-    created:     created,
-    mesRaw:      mesRaw, // Añadido para el filtro de mes
-    fechaFin:    item[CONFIG.campos.fechaFin] || null,
+    id: item[CONFIG.campos.id], created, mesRaw,
+    gestionador: String(item[CONFIG.campos.gestionador]||'—').trim(),
+    encargado: String(item[CONFIG.campos.encargado]||'—').trim(),
+    area: String(item[CONFIG.campos.area]||'—').trim(),
+    tipo: String(item[CONFIG.campos.tipo]||'—').trim(),
+    estado: String(item[CONFIG.campos.estado]||'—').trim(),
+    satisfaccion: String(item[CONFIG.campos.satisfaccion]||'—').trim(),
+    tiempoEst: parseFloat(item[CONFIG.campos.tiempoEst]) || 480,
+    fechaFin: item[CONFIG.campos.fechaFin] || null,
   };
 }
 
 // ══════════════════════════════════════════════════
-// FILTROS DINÁMICOS Y MES
+// DEBOUNCE & FILTROS DINÁMICOS
 // ══════════════════════════════════════════════════
+function debounceFiltros() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    currentPage = 1; // Al filtrar, regresamos a la pag 1
+    aplicarFiltros();
+  }, 300); // 300ms de retraso para evitar lag
+}
+
 function poblarFiltrosDinamicos() {
-  // 1. POBLAR EL FILTRO DE MESES
   const mesesValidos = [...new Set(todosLosTickets.map(t => t.mesRaw))].filter(Boolean).sort().reverse();
   const selectMes = document.getElementById('f-mes');
-  selectMes.innerHTML = '<option value="">Histórico (Todos los meses)</option>';
+  const actualMes = selectMes.value; // Guardar selección actual
+  selectMes.innerHTML = '<option value="">Histórico Completo</option>';
   
   mesesValidos.forEach(m => {
       const [y, mo] = m.split('-');
-      const date = new Date(y, mo-1, 1);
-      let str = date.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' });
-      str = str.charAt(0).toUpperCase() + str.slice(1).replace(' de ', ' '); // Ej: "Mayo 2026"
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = str;
-      selectMes.appendChild(opt);
+      let str = new Date(y, mo-1, 1).toLocaleDateString('es-GT', { month: 'long', year: 'numeric' });
+      str = str.charAt(0).toUpperCase() + str.slice(1).replace(' de ', ' ');
+      selectMes.appendChild(new Option(str, m));
   });
 
-  // SELECCIONAR MES ACTUAL POR DEFECTO
-  if (mesesValidos.length > 0) {
-      const mAhora = new Date();
-      const currentMonthRaw = `${mAhora.getFullYear()}-${String(mAhora.getMonth()+1).padStart(2,'0')}`;
-      // Si existe el mes actual en los datos lo selecciona, sino selecciona el más reciente
-      selectMes.value = mesesValidos.includes(currentMonthRaw) ? currentMonthRaw : mesesValidos[0];
+  if (!actualMes && mesesValidos.length > 0) {
+      const mAhora = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+      selectMes.value = mesesValidos.includes(mAhora) ? mAhora : mesesValidos[0];
+  } else {
+      selectMes.value = actualMes;
   }
 
-  // 2. ESTADOS HÍBRIDOS (Mantiene siempre los estados oficiales aunque haya 0 tickets)
-  const estadosOficiales = ['Atendido', 'En Gestion', 'En Proceso', 'Cancelado', 'Cierre Justificado'];
-  const estadosReales = todosLosTickets.map(t => t.estado);
-  poblarSelect('f-estado', [...new Set([...estadosOficiales, ...estadosReales])].filter(v => v !== '—' && v !== '').sort());
-
-  // 3. RESTO DE FILTROS
-  poblarSelect('f-gestionador', [...new Set(todosLosTickets.map(t => t.gestionador))].filter(v => v !== '—').sort());
-  poblarSelect('f-satisfaccion', [...new Set(todosLosTickets.map(t => t.satisfaccion))].filter(v => v !== '—').sort());
+  // Estados Híbridos (Mantiene los oficiales siempre)
+  const estOficiales = ['Atendido', 'En Gestion', 'En Proceso', 'Cancelado', 'Cierre Justificado'];
+  poblarSelect('f-estado', [...new Set([...estOficiales, ...todosLosTickets.map(t=>t.estado)])].filter(v=>v!=='—'&&v!=='').sort());
+  
+  poblarSelect('f-encargado', [...new Set(todosLosTickets.map(t=>t.encargado))].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-gestionador', [...new Set(todosLosTickets.map(t=>t.gestionador))].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-satisfaccion', [...new Set(todosLosTickets.map(t=>t.satisfaccion))].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-area', [...new Set(todosLosTickets.map(t=>t.area))].filter(v=>v!=='—'&&v!=='').sort());
+  poblarSelect('f-tipo', [...new Set(todosLosTickets.map(t=>t.tipo))].filter(v=>v!=='—'&&v!=='').sort());
 }
 
-function poblarSelect(id, valores) {
-  const sel = document.getElementById(id);
-  const primera = sel.options[0];
-  sel.innerHTML = '';
-  sel.appendChild(primera);
-  valores.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = v;
-    sel.appendChild(opt);
-  });
+function poblarSelect(id, vals) {
+  const sel = document.getElementById(id), curr = sel.value;
+  sel.innerHTML = `<option value="">${sel.options[0].text}</option>`;
+  vals.forEach(v => sel.appendChild(new Option(v, v)));
+  sel.value = curr;
 }
 
-function activarDiagnostico() {
-  const estadosUnicos = [...new Set(todosLosTickets.map(t => t.estado))];
-  const conteos = estadosUnicos.map(e => {
-    const n = todosLosTickets.filter(t => t.estado === e).length;
-    return `"${e}" → ${n}`;
-  });
-  setText('debug-estados', conteos.join(' | '));
-  // Ocultado por defecto para no molestar la vista, pero listo en el código
-  // document.getElementById('debug-bar').style.display = 'block';
-}
-
-// ══════════════════════════════════════════════════
-// FILTROS APLICACIÓN
-// ══════════════════════════════════════════════════
 function aplicarFiltros() {
-  const mes  = document.getElementById('f-mes').value;
-  const enc  = document.getElementById('f-encargado').value;
-  const est  = document.getElementById('f-estado').value;
-  const gest = document.getElementById('f-gestionador').value;
-  const sat  = document.getElementById('f-satisfaccion').value;
-  const area = document.getElementById('f-area').value;
-  const tipo = document.getElementById('f-tipo').value;
-  const sla  = document.getElementById('f-sla').value;
-  const des  = document.getElementById('f-desde').value;
-  const has  = document.getElementById('f-hasta').value;
+  const f = {
+    mes: document.getElementById('f-mes').value, enc: document.getElementById('f-encargado').value,
+    est: document.getElementById('f-estado').value, gest: document.getElementById('f-gestionador').value,
+    sat: document.getElementById('f-satisfaccion').value, area: document.getElementById('f-area').value,
+    tipo: document.getElementById('f-tipo').value, sla: document.getElementById('f-sla').value,
+    des: document.getElementById('f-desde').value, has: document.getElementById('f-hasta').value
+  };
 
   ticketsFiltrados = todosLosTickets.filter(t => {
-    if (mes  && t.mesRaw !== mes) return false;
-    if (enc  && t.encargado   !== enc)  return false;
-    if (est  && t.estado      !== est)  return false;
-    if (gest && t.gestionador !== gest) return false;
-    if (sat  && t.satisfaccion!== sat)  return false;
-    if (area && t.area        !== area) return false;
-    if (tipo && t.tipo        !== tipo) return false;
-    if (sla  && calcularSLA(t).estado !== sla) return false;
-    if (des  && new Date(t.created) < new Date(des))                  return false;
-    if (has  && new Date(t.created) > new Date(has + 'T23:59:59'))   return false;
+    if (f.mes && t.mesRaw !== f.mes) return false;
+    if (f.enc && t.encargado !== f.enc) return false;
+    if (f.est && t.estado !== f.est) return false;
+    if (f.gest && t.gestionador !== f.gest) return false;
+    if (f.sat && t.satisfaccion !== f.sat) return false;
+    if (f.area && t.area !== f.area) return false;
+    if (f.tipo && t.tipo !== f.tipo) return false;
+    if (f.sla && calcularSLA(t).estado !== f.sla) return false;
+    if (f.des && new Date(t.created) < new Date(f.des)) return false;
+    if (f.has && new Date(t.created) > new Date(f.has + 'T23:59:59')) return false;
     return true;
   });
 
-  renderKPIs();
-  renderTabla();
-  renderGraficas();
+  renderKPIs(); renderTabla(); renderGraficas();
 }
 
 function limpiarFiltros() {
-  // Nota: No limpiamos el 'f-mes' para no mandar al usuario al abismo histórico de golpe
-  ['f-encargado','f-estado','f-gestionador','f-satisfaccion',
-   'f-area','f-tipo','f-sla','f-desde','f-hasta']
-    .forEach(id => document.getElementById(id).value = '');
+  ['f-encargado','f-estado','f-gestionador','f-satisfaccion','f-area','f-tipo','f-sla','f-desde','f-hasta'].forEach(id => document.getElementById(id).value = '');
+  currentPage = 1;
   aplicarFiltros();
 }
 
 // ══════════════════════════════════════════════════
-// SLA (CORREGIDO PARA MOSTRAR AMARILLOS)
-// ══════════════════════════════════════════════════
-function calcularSLA(t) {
-  const ahora  = new Date();
-  const inicio = new Date(t.created);
-  const est    = t.tiempoEst || 480;
-  const cerrado = esCerrado(t.estado);
-  const trans  = cerrado && t.fechaFin
-    ? (new Date(t.fechaFin) - inicio) / 60000
-    : (ahora - inicio) / 60000;
-  const pct = trans / est;
-
-  // NUEVA REGLA: Aplica para todos los tickets (Cerrados o Abiertos)
-  let estado;
-  if (pct < 0.8) {
-    estado = 'verde';      // Menos del 80% del tiempo = OK
-  } else if (pct <= 1.0) {
-    estado = 'amarillo';   // Entre el 80% y el 100% = RIESGO / AL LÍMITE
-  } else {
-    estado = 'rojo';       // Se pasó del 100% = VENCIDO
-  }
-
-  return { trans: Math.round(trans), est, pct, estado };
-}
-
-function fMin(m) {
-  if (m < 0) return '0min';
-  if (m < 60) return m + 'min';
-  const h = Math.floor(m/60), r = m%60;
-  return h + 'h' + (r ? ' ' + r + 'min' : '');
-}
-
-function fFecha(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'2-digit'});
-}
-
-// ══════════════════════════════════════════════════
-// KPIs
+// RENDER KPI & GRÁFICAS
 // ══════════════════════════════════════════════════
 function renderKPIs() {
-  const tot = ticketsFiltrados.length;
-  const ab  = ticketsFiltrados.filter(t => !esCerrado(t.estado)).length;
-  const ce  = ticketsFiltrados.filter(t =>  esCerrado(t.estado)).length;
-  let vd=0, am=0, ro=0;
-  ticketsFiltrados.forEach(t => {
-    const s = calcularSLA(t).estado;
-    if(s==='verde') vd++; else if(s==='amarillo') am++; else ro++;
-  });
-  setText('k-total',    tot);
-  setText('k-abiertos', ab);
-  setText('k-cerrados', ce);
-  setText('k-vencidos', ro);
-  setText('k-riesgo',   am);
-  setText('k-pct', (tot > 0 ? Math.round(vd/tot*100) : 0) + '%');
+  const tot = ticketsFiltrados.length, ab = ticketsFiltrados.filter(t=>!esCerrado(t.estado)).length, ce = tot - ab;
+  let v=0, a=0, r=0;
+  ticketsFiltrados.forEach(t=>{ const s=calcularSLA(t).estado; if(s==='verde')v++; else if(s==='amarillo')a++; else r++; });
+  document.getElementById('k-total').textContent = tot; document.getElementById('k-abiertos').textContent = ab;
+  document.getElementById('k-cerrados').textContent = ce; document.getElementById('k-vencidos').textContent = r;
+  document.getElementById('k-riesgo').textContent = a; document.getElementById('k-pct').textContent = (tot>0 ? Math.round(v/tot*100) : 0) + '%';
+}
+
+function renderGraficas() {
+  Object.values(chartInstances).forEach(c => c.destroy());
+  const contar = (c) => ticketsFiltrados.reduce((acc,t)=>{acc[t[c]]=(acc[t[c]]||0)+1; return acc;},{});
+  const mkC = (id, type, lab, dat, col) => {
+    document.getElementById('leg-'+id).innerHTML = lab.map((l,i)=>`<span class="legend-item"><span class="legend-sq" style="background:${col[i%col.length]}"></span>${l} (${dat[i]})</span>`).join('');
+    chartInstances[id] = new Chart(document.getElementById('chart-'+id), { type, data: { labels:lab, datasets:[{ data:dat, backgroundColor:col, borderWidth:0, borderRadius: type==='bar'?4:0 }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales: type==='bar'?{x:{ticks:{font:{size:9}}},y:{ticks:{stepSize:1,font:{size:9}}}}:{} } });
+  };
+  
+  let v=0,a=0,r=0; ticketsFiltrados.forEach(t=>{const s=calcularSLA(t).estado; if(s==='verde')v++;else if(s==='amarillo')a++;else r++;});
+  mkC('sla', 'doughnut', ['OK','Riesgo','Vencido'], [v,a,r], ['#1D9E75','#EF9F27','#E24B4A']);
+  const ed=contar('encargado'), el=Object.keys(ed); mkC('enc', 'doughnut', el, Object.values(ed), el.map((_,i)=>COLORES[i%COLORES.length]));
+  const ad=Object.entries(contar('area')).sort((a,b)=>b[1]-a[1]).slice(0,8); mkC('area', 'bar', ad.map(x=>x[0]), ad.map(x=>x[1]), ad.map((_,i)=>COLORES[i%COLORES.length]));
+  const td=Object.entries(contar('tipo')).sort((a,b)=>b[1]-a[1]).slice(0,8); mkC('tipo', 'bar', td.map(x=>x[0]), td.map(x=>x[1]), td.map((_,i)=>COLORES[i%COLORES.length]));
 }
 
 // ══════════════════════════════════════════════════
-// TABLA
+// PAGINACIÓN Y TABLA
 // ══════════════════════════════════════════════════
+function cambiarPagina(dir) {
+  currentPage += dir;
+  renderTabla();
+}
+
 function renderTabla() {
   const tbody = document.getElementById('tbody');
-  setText('table-count', ticketsFiltrados.length + ' tickets en este mes/selección');
+  document.getElementById('table-count').textContent = ticketsFiltrados.length + ' encontrados';
+  
   if (!ticketsFiltrados.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Sin tickets con estos filtros</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No hay tickets.</td></tr>';
+    document.getElementById('page-info').textContent = 'Página 1 de 1';
+    document.getElementById('btn-prev').disabled = true; document.getElementById('btn-next').disabled = true;
     return;
   }
+  
   const sorted = [...ticketsFiltrados].sort((a,b) => new Date(b.created) - new Date(a.created));
-  tbody.innerHTML = sorted.map(t => {
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  document.getElementById('page-info').textContent = `Página ${currentPage} de ${totalPages}`;
+  document.getElementById('btn-prev').disabled = (currentPage === 1);
+  document.getElementById('btn-next').disabled = (currentPage === totalPages);
+
+  const inicioPag = (currentPage - 1) * itemsPerPage;
+  const itemsPagina = sorted.slice(inicioPag, inicioPag + itemsPerPage);
+  
+  tbody.innerHTML = itemsPagina.map(t => {
     const s = calcularSLA(t);
-    const bc = 'badge-' + s.estado;
-    const bl = s.estado==='verde' ? 'OK' : s.estado==='amarillo' ? 'Riesgo' : 'Vencido';
-    const satHtml = t.satisfaccion && t.satisfaccion !== '—'
-      ? `<span class="sat-badge">${t.satisfaccion}</span>` : '<span style="color:var(--muted)">—</span>';
+    const satHtml = t.satisfaccion !== '—' ? `<span class="sat-badge">${t.satisfaccion}</span>` : '<span style="color:var(--muted)">—</span>';
     return `<tr>
       <td style="font-weight:600;color:var(--muted)">#${t.id}</td>
-      <td title="${t.gestionador}">${t.gestionador}</td>
-      <td>${t.encargado}</td>
-      <td title="${t.area}">${t.area}</td>
-      <td title="${t.tipo}">${t.tipo}</td>
-      <td><span class="badge-estado">${t.estado}</span></td>
-      <td>${satHtml}</td>
-      <td>${fFecha(t.created)}</td>
-      <td style="color:var(--muted);font-size:11px">${fMin(s.trans)} / ${fMin(s.est)}</td>
-      <td><span class="badge ${bc}">${bl}</span></td>
+      <td>${t.gestionador}</td><td>${t.encargado}</td><td>${t.area}</td><td>${t.tipo}</td>
+      <td><span class="badge-estado">${t.estado}</span></td><td>${satHtml}</td>
+      <td>${fFecha(t.created)}</td><td style="color:var(--muted);font-size:10px">${fMin(s.trans)} / ${fMin(s.est)}</td>
+      <td><span class="badge badge-${s.estado}">${s.estado==='verde'?'OK':s.estado==='amarillo'?'Riesgo':'Vencido'}</span></td>
     </tr>`;
   }).join('');
 }
 
 // ══════════════════════════════════════════════════
-// GRÁFICAS
+// EXPORTAR A CSV
 // ══════════════════════════════════════════════════
-function contarPor(campo) {
-  return ticketsFiltrados.reduce((acc, t) => {
-    const v = t[campo] || 'Sin dato';
-    acc[v] = (acc[v]||0)+1; return acc;
-  }, {});
-}
-
-function mkLegend(id, labels, vals, cols) {
-  document.getElementById(id).innerHTML = labels.map((l,i) =>
-    `<span class="legend-item"><span class="legend-sq" style="background:${cols[i%cols.length]}"></span>${l} (${vals[i]})</span>`
-  ).join('');
-}
-
-function mkChart(id, type, labels, data, colors, extra) {
-  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
-  chartInstances[id] = new Chart(document.getElementById(id), {
-    type,
-    data: { labels, datasets:[{ data, backgroundColor: colors, borderWidth:0, borderRadius: type==='bar'?4:0 }] },
-    options: Object.assign({ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }, extra||{})
+function exportarCSV() {
+  if (!ticketsFiltrados.length) return alert("No hay datos para exportar");
+  
+  const cabeceras = ['ID', 'Gestionador', 'Técnico', 'Área', 'Tipo', 'Estado', 'Satisfacción', 'Creado', 'Tiempo Invertido', 'Tiempo Est.', 'Estado SLA'];
+  const filas = ticketsFiltrados.sort((a,b) => new Date(b.created) - new Date(a.created)).map(t => {
+    const s = calcularSLA(t);
+    return [
+      t.id, t.gestionador, t.encargado, t.area, t.tipo, t.estado, t.satisfaccion, 
+      fFecha(t.created), fMin(s.trans), fMin(s.est), 
+      s.estado === 'verde' ? 'OK' : s.estado === 'amarillo' ? 'Riesgo' : 'Vencido'
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','); // Escapar comillas para Excel
   });
+  
+  const csvStr = "\uFEFF" + cabeceras.join(',') + '\n' + filas.join('\n'); // \uFEFF fuerza UTF-8 en Excel
+  const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  
+  const mesFiltro = document.getElementById('f-mes').options[document.getElementById('f-mes').selectedIndex]?.text.replace(/ /g, '_') || 'Historico';
+  link.setAttribute("download", `Reporte_SLA_${mesFiltro}.csv`);
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
-const barScales = {
-  scales:{
-    x:{ticks:{font:{size:10},maxRotation:35},grid:{display:false}},
-    y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}
-  }
-};
-
-function renderGraficas() {
-  // SLA
-  let vd=0,am=0,ro=0;
-  ticketsFiltrados.forEach(t => {
-    const s=calcularSLA(t).estado;
-    if(s==='verde')vd++; else if(s==='amarillo')am++; else ro++;
-  });
-  mkLegend('leg-sla',['Verde (OK)','Amarillo (Riesgo)','Rojo (Vencido)'],[vd,am,ro],['#1D9E75','#EF9F27','#E24B4A']);
-  mkChart('chart-sla','doughnut',['Verde','Amarillo','Rojo'],[vd,am,ro],['#1D9E75','#EF9F27','#E24B4A']);
-
-  // Técnico
-  const ed=contarPor('encargado'),el=Object.keys(ed),ev=Object.values(ed);
-  mkLegend('leg-enc',el,ev,COLORES);
-  mkChart('chart-enc','doughnut',el,ev,el.map((_,i)=>COLORES[i%COLORES.length]));
-
-  // Área
-  const at=Object.entries(contarPor('area')).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  mkLegend('leg-area',at.map(x=>x[0]),at.map(x=>x[1]),COLORES);
-  mkChart('chart-area','bar',at.map(x=>x[0]),at.map(x=>x[1]),at.map((_,i)=>COLORES[i%COLORES.length]),barScales);
-
-  // Tipo
-  const tt=Object.entries(contarPor('tipo')).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  mkLegend('leg-tipo',tt.map(x=>x[0]),tt.map(x=>x[1]),COLORES);
-  mkChart('chart-tipo','bar',tt.map(x=>x[0]),tt.map(x=>x[1]),tt.map((_,i)=>COLORES[i%COLORES.length]),barScales);
-}
-
-// ══════════════════════════════════════════════════
 // UI HELPERS
-// ══════════════════════════════════════════════════
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
+function mostrarEstado(tipo) { document.getElementById('state-panel').style.display = 'block'; document.getElementById('dashboard-content').style.display = 'none'; document.getElementById('state-panel').className = 'state-panel'; document.getElementById('state-panel').innerHTML = '<div class="spinner"></div><p id="state-text">Iniciando conexión...</p>'; }
+function mostrarError(msg) { document.getElementById('state-panel').className = 'state-panel error'; document.getElementById('state-panel').innerHTML = `<div class="etitle">❌ Error de conexión</div><p>${msg}</p><button class="btn-refresh" onclick="location.reload()" style="margin-top:14px">↻ Recargar</button>`; }
+function mostrarDashboard() { document.getElementById('state-panel').style.display = 'none'; document.getElementById('dashboard-content').style.display = 'block'; }
 
-function mostrarEstado(tipo) {
-  document.getElementById('state-panel').style.display = 'block';
-  document.getElementById('dashboard-content').style.display = 'none';
-  const p = document.getElementById('state-panel');
-  p.className = 'state-panel';
-  p.innerHTML = '<div class="spinner"></div><p id="state-text">Iniciando conexión...</p>';
-}
-
-function mostrarError(msg) {
-  const p = document.getElementById('state-panel');
-  p.className = 'state-panel error';
-  p.innerHTML = `
-    <div class="etitle">❌ Error de conexión</div>
-    <p>${msg}</p>
-    <div class="ehint">
-      <strong>Revisa:</strong><br>
-      1. Que la App Registration tiene permisos <strong>AllSites.Read</strong><br>
-      2. Que se dio "Conceder consentimiento de administrador"<br>
-      3. Que el nombre de la lista es exactamente <strong>DB_GESTIONESIT</strong>
-    </div>
-    <button class="btn-refresh" onclick="location.reload()" style="margin-top:14px">↻ Recargar</button>`;
-}
-
-function mostrarDashboard() {
-  document.getElementById('state-panel').style.display = 'none';
-  document.getElementById('dashboard-content').style.display = 'block';
-  renderKPIs(); renderTabla(); renderGraficas();
-}
-
-// ══════════════════════════════════════════════════
-// INICIO
-// ══════════════════════════════════════════════════
+// INICIAR
 cargarDatos();
-setInterval(cargarDatos, 5 * 60 * 1000);
+setInterval(() => cargarDatos(true), 5 * 60 * 1000); // Forzar sync cada 5 min
 </script>
 </body>
 </html>
